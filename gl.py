@@ -72,6 +72,51 @@ class Render(object):
     def point(self,x,y):
         self.framebuffer[y][x] = self.drawColor
 
+    def line(self, x0,y0, x1, y1):
+        dx = abs(x1 - x0)
+        dy = abs(y1 - y0)
+        
+        steep = dy> dx
+
+        if steep :
+            x0, y0 = y0, x0
+            x1, y1 = y1, x1
+
+        if x0 > x1:
+            x0, x1 = x1, x0
+            y0, y1 = y1, y0
+        
+
+        dy = abs(y1 - y0)
+        dx = abs(x1 - x0)
+
+        offset = 0
+        threshold = 0.5 * 2 * dx
+
+        y = y0
+        
+
+        for x in range(x0, x1+1):
+            if steep:
+                self.point(y , x)
+            else: 
+                self.point(x,y)
+            
+            offset += dy * 2
+            if offset >= threshold:
+                y+=1 if y0 < y1 else -1
+                threshold += 2* dx 
+
+    def glLine(self, x0, y0, x1, y1):
+        if -1>x0>1 or -1>x0>1 or -1>x0>1 or -1>x0>1:
+            raise Exception("One of the arguments of glLine is greater than 1 or smaller than -1")
+        else:
+            inicialX = round((x0+1)*(self.viewport.width/2)+self.viewport.x)
+            inicialY = round((y0+1)*(self.viewport.height/2)+self.viewport.y)
+            finalX = round((x1+1)*(self.viewport.width/2)+self.viewport.x)
+            finalY = round((y1+1)*(self.viewport.height/2)+self.viewport.y)
+            self.line(inicialX, inicialY, finalX,  finalY)
+
 #This class will be helpfull if more viewports are required in the future
 class Viewport(object):
     def __init__(self, x, y, height, width):
@@ -80,11 +125,6 @@ class Viewport(object):
         self.height = height
         self.width = width
 
-Render = Render(100,100)
 
-Render.glClearColor(1,0,0)
-Render.glClear()
-Render.glViewPort(0,50,100,50)
-Render.glColor(0,0,1)
-Render.glVertex(0,0)
-Render.glFinish()
+
+
