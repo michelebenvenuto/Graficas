@@ -38,7 +38,7 @@ class Render(object):
     def glVertex(self,x,y):
         XCoordinate = round((x+1)*(self.viewport.width/2)+self.viewport.x)
         YCoordinate = round((y+1)*(self.viewport.height/2)+self.viewport.y)
-        self.point(XCoordinate,YCoordinate)
+        self.point(V2(XCoordinate,YCoordinate))
 
     def glColor(self, r,g,b):
         self.drawColor = color(r,g,b)
@@ -171,17 +171,17 @@ class Render(object):
         for point in border:
             self.line(halfPoint, V2(point[0], point[1]))
 
-    def triangle(self, A, B, C, color):
-        xmin, xmax, ymin, ymax = bbox(A, B, C)
+    # def triangle(self, A, B, C, color):
+    #     xmin, xmax, ymin, ymax = bbox(A, B, C)
 
-        for x in range(xmin, xmax +1):
-            for y in range(ymin, ymax):
-                P = V2(x, y)
-                w, v ,u = barycentrinc(A,B,C, P)
-                if w<0 or v<0 or u<0:
-                    continue
+    #     for x in range(xmin, xmax +1):
+    #         for y in range(ymin, ymax):
+    #             P = V2(x, y)
+    #             w, v ,u = barycentrinc(A,B,C, P)
+    #             if w<0 or v<0 or u<0:
+    #                 continue
 
-                self.point(x, y, color)
+    #             self.point(x, y)
 
 #This class will be helpfull if more viewports are required in the future
 class Viewport(object):
