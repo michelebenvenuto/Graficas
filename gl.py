@@ -1,4 +1,4 @@
-from usefullFunctions import char, word, dword, color
+from usefullFunctions import char, word, dword, color, V2, V3
 from obj import Obj
 
 White = color(1,1,1)
@@ -70,13 +70,17 @@ class Render(object):
 
         f.close()
 
-    def point(self,x,y):
+    def point(self,point):
         try:
-            self.framebuffer[y][x] = self.drawColor
+            self.framebuffer[point.y][point.x] = self.drawColor
         except:
             pass
         
-    def line(self, x0,y0, x1, y1):
+    def line(self, A, B):
+        x0 = A.x
+        y0 = A.y
+        x1 = B.x
+        y1 = B.y
         dx = abs(x1 - x0)
         dy = abs(y1 - y0)
         
@@ -102,9 +106,9 @@ class Render(object):
 
         for x in range(x0, x1+1):
             if steep:
-                self.point(y , x)
+                self.point(V2(y , x))
             else: 
-                self.point(x,y)
+                self.point(V2(x,y))
             
             offset += dy * 2
             if offset >= threshold:
@@ -119,7 +123,7 @@ class Render(object):
             inicialY = round((y0+1)*(self.viewport.height/2)+self.viewport.y)
             finalX = round((x1+1)*(self.viewport.width/2)+self.viewport.x)
             finalY = round((y1+1)*(self.viewport.height/2)+self.viewport.y)
-            self.line(inicialX, inicialY, finalX,  finalY)
+            self.line(V2(inicialX, inicialY), V2(finalX,  finalY))
     
     def load(self, filename, translate, scale):
         model = Obj(filename)
@@ -139,12 +143,12 @@ class Render(object):
                 x2 = round((v2[0] + translate[0]) * scale[0])
                 y2 = round((v2[1] + translate[1]) * scale[1])
 
-                self.line(x1, y1, x2, y2)
+                self.line(V2(x1, y1), V2(x2, y2))
 
     def paint(self, points):
         pointCount = len(points)
         for i in range(pointCount):
-            self.line(points[i][0], points[i][1], points[(i+1)%pointCount][0], points[(i+1)%pointCount][1])
+            self.line(V2(points[i][0], points[i][1]), V2(points[(i+1)%pointCount][0], points[(i+1)%pointCount][1]))
         topPoint = None
         bottomPoint = None
         leftPoint = None
@@ -158,14 +162,27 @@ class Render(object):
                 topPoint = point[1]
             if (bottomPoint == None or point[1] <= bottomPoint  ):
                 bottomPoint = point[1]
-        halfPoint = [round((leftPoint+ rightPoint)/2), round((bottomPoint+ topPoint)/2)]
+        halfPoint = V2(round((leftPoint+ rightPoint)/2), round((bottomPoint+ topPoint)/2))
         border = []
         for y in range( bottomPoint, topPoint+1):
             for x in range(leftPoint, rightPoint+1):
                 if(self.framebuffer[y][x]!= self.clearColor):
                     border.append([x,y])
         for point in border:
-            self.line(halfPoint[0], halfPoint[1], point[0], point[1])
+            self.line(halfPoint, V2(point[0], point[1]))
+
+    def triangle(self, A, B, C, color):
+        xmin, xmax, ymin, ymax = bbox(A, B, C)
+
+        for x in range(xmin, xmax +1):
+            for y in range(ymin, ymax):
+                P = V2(x, y)
+                w, v ,u = barycentrinc(A,B,C, P)
+                if w<0 or v<0 or u<0:
+                    continue
+
+                self.point(x, y, color)
+
 #This class will be helpfull if more viewports are required in the future
 class Viewport(object):
     def __init__(self, x, y, height, width):
@@ -173,7 +190,3 @@ class Viewport(object):
         self.y = y
         self.height = height
         self.width = width
-
-
-
-

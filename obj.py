@@ -13,6 +13,6 @@ class Obj(object):
                 prefix, value = line.split(' ', 1)
 
                 if prefix =='v':
-                    self.vertexes.append(list(map(float,value.split(' '))))
+                    self.vertexes.append(list(map(float, value.split(' '))))
                 elif prefix == 'f':
                      self.faces.append([list(map(int , face.split('/'))) for face in value.split(' ')])
