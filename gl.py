@@ -1,10 +1,11 @@
-from usefullFunctions import char, word, dword, color, V2, V3
-from obj import Obj
+from usefullFunctions import *
+from obj import Obj, Texture
 
-White = color(1,1,1)
+White = color(255,255,255)
+Black = color(0,0,0)
 
 class Render(object):
-    def __init__(self, width, height, fileName = 'test.bmp', clearColor = White):
+    def __init__(self, width, height, fileName = 'test.bmp', clearColor = Black):
         self.width = width
         self.height = height
         self.fileName = fileName
@@ -13,16 +14,21 @@ class Render(object):
         self.viewport = None
         self.drawColor = White
         self.glCreateWindow(self.width,self.height)
+        
 
     def glInit(self):
         return('TODO')
 
     def glCreateWindow(self,width,height):
         self.framebuffer = [
-            [White for x in range(width)]
+            [self.clearColor for x in range(width)]
             for y in range(height) 
         ]
-    
+        self.zbuffer = [
+            [-float('inf') for x in range(self.width)]
+            for y in range(self.height)
+        ]
+
     def glViewPort(self,x,y, width, height):
         self.viewport = Viewport(x,y,height,width)
     
@@ -70,9 +76,9 @@ class Render(object):
 
         f.close()
 
-    def point(self,point):
+    def point(self,point, color = None):
         try:
-            self.framebuffer[point.y][point.x] = self.drawColor
+            self.framebuffer[point.y][point.x] = color or self.drawColor
         except:
             pass
         
@@ -125,25 +131,85 @@ class Render(object):
             finalY = round((y1+1)*(self.viewport.height/2)+self.viewport.y)
             self.line(V2(inicialX, inicialY), V2(finalX,  finalY))
     
-    def load(self, filename, translate, scale):
+    def transform(self, vertex, translate=(0, 0, 0), scale=(1, 1, 1)):
+        return V3(
+        round((vertex[0] + translate[0]) * scale[0]),
+        round((vertex[1] + translate[1]) * scale[1]),
+        round((vertex[2] + translate[2]) * scale[2])
+        )
+
+    def load(self, filename, translate, scale, texture = None):
         model = Obj(filename)
+        light = V3(0,0,1)
 
         for face in model.faces:
             vcount = len(face)
 
-            for j in range(vcount):
-                f1 = face[j][0]
-                f2 = face[(j+1)% vcount][0]
+            if vcount == 3:
+                f1 = face[0][0] - 1
+                f2 = face[1][0] - 1
+                f3 = face[2][0] - 1
+                
+                a = self.transform(model.vertexes[f1], translate, scale)
+                b = self.transform(model.vertexes[f2], translate, scale)
+                c = self.transform(model.vertexes[f3], translate, scale)
 
-                v1 = model.vertexes[f1 -1]
-                v2 = model.vertexes[f2 -1]
+                normal = norm(cross(sub(b, a), sub(c, a)))
+                intensity = dot(normal, light)
 
-                x1 = round((v1[0] + translate[0]) * scale[0])
-                y1 = round((v1[1] + translate[1]) * scale[1])
-                x2 = round((v2[0] + translate[0]) * scale[0])
-                y2 = round((v2[1] + translate[1]) * scale[1])
+                if not texture:
+                    grey = round(255 * intensity)
+                    if grey < 0:
+                        continue
+                    self.triangle(a, b, c, color = color(grey, grey, grey))
+                else:
+                    t1 = face[0][1] - 1
+                    t2 = face[1][1] - 1
+                    t3 = face[2][1] - 1
+                    tA = V3(*model.tvertexes[t1])
+                    tB = V3(*model.tvertexes[t2])
+                    tC = V3(*model.tvertexes[t3])
 
-                self.line(V2(x1, y1), V2(x2, y2))
+                    self.triangle(a, b, c, texture=texture, texture_coords=(tA, tB, tC), intensity=intensity)
+
+            else:
+                f1 = face[0][0] - 1
+                f2 = face[1][0] - 1
+                f3 = face[2][0] - 1
+                f4 = face[3][0] - 1   
+
+                vertices = [
+                    self.transform(model.vertexes[f1], translate, scale),
+                    self.transform(model.vertexes[f2], translate, scale),
+                    self.transform(model.vertexes[f3], translate, scale),
+                    self.transform(model.vertexes[f4], translate, scale)
+                ]
+
+                normal = norm(cross(sub(vertices[0], vertices[1]), sub(vertices[1], vertices[2])))  # no necesitamos dos normales!!
+                intensity = dot(normal, light)
+                grey = round(255 * intensity)
+  
+                A, B, C, D = vertices 
+
+                if not texture:
+                    grey = round(255* intensity)
+                    if grey < 0:
+                        continue
+            
+                    self.triangle(A, B, C, color(grey, grey, grey))
+                    self.triangle(A, C, D, color(grey, grey, grey))
+                else:
+                    t1 = face[0][1] - 1
+                    t2 = face[1][1] - 1
+                    t3 = face[2][1] - 1
+                    t4 = face[3][1] - 1
+                    tA = V3(*model.tvertexes[t1])
+                    tB = V3(*model.tvertexes[t2])
+                    tC = V3(*model.tvertexes[t3])
+                    tD = V3(*model.tvertexes[t4])
+            
+                    self.triangle(A, B, C, texture=texture, texture_coords=(tA, tB, tC), intensity=intensity)
+                    self.triangle(A, C, D, texture=texture, texture_coords=(tA, tC, tD), intensity=intensity)
 
     def paint(self, points):
         pointCount = len(points)
@@ -171,18 +237,31 @@ class Render(object):
         for point in border:
             self.line(halfPoint, V2(point[0], point[1]))
 
-    # def triangle(self, A, B, C, color):
-    #     xmin, xmax, ymin, ymax = bbox(A, B, C)
+    def triangle(self, A, B, C, color = None, texture = None, texture_coords = (), intensity = 1):
+        xmin, xmax, ymin, ymax = bbox(A, B, C)
 
-    #     for x in range(xmin, xmax +1):
-    #         for y in range(ymin, ymax):
-    #             P = V2(x, y)
-    #             w, v ,u = barycentrinc(A,B,C, P)
-    #             if w<0 or v<0 or u<0:
-    #                 continue
+        for x in range(xmin, xmax +1):
+            for y in range(ymin, ymax+1):
+                P = V2(x, y)
+                w, v ,u = barycentric(A, B, C, P)
+                if w<0 or v<0 or u<0:
+                    continue
+                
+                if texture:
+                    tA, tB, tC = texture_coords
+                    tx = tA.x * w + tB.x * v + tC.x * u
+                    ty = tA.y * w + tB.y * v + tC.y * u
 
-    #             self.point(x, y)
+                    color = texture.get_color(tx, ty, intensity)
 
+                z = A.z * w + B.z * v + C.z * u
+
+                if x<0 or y<0:
+                    continue
+
+                if z > self.zbuffer[x][y] and x < len(self.zbuffer) and y < len(self.zbuffer[x]) :
+                    self.point(V2(x, y), color)
+                    self.zbuffer[x][y] = z
 #This class will be helpfull if more viewports are required in the future
 class Viewport(object):
     def __init__(self, x, y, height, width):
