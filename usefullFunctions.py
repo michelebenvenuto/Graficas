@@ -31,8 +31,6 @@ def JupiterShader(x, y,filler):
     ymin = 255
     xmidPoint = midPoint(xmax,xmin)
     yMidPoint = midPoint(ymax,ymin)
-    xleftQuarter = midPoint(xmin, xmidPoint)
-    xRightQuarter = midPoint(xmidPoint, xmax)
     yLowerQuarter = midPoint(ymin, yMidPoint)
     yUpperQuarter = midPoint(yMidPoint, ymax)
 
