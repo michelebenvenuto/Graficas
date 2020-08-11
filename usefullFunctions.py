@@ -1,4 +1,6 @@
 import struct
+import random
+from math import sqrt
 from collections import namedtuple
 
 def char(myChar):
@@ -15,6 +17,51 @@ def dword(myChar):
 
 def color(r,g,b):
 	return bytes([b,g,r])
+
+def midPoint(start, end):
+    return round((start+end)/2)
+
+
+def JupiterShader(x, y,filler):
+    # X goes from 253 to 503
+    # Y goes from 255 to 505
+    xmax = 503
+    xmin = 253
+    ymax = 505
+    ymin = 255
+    xmidPoint = midPoint(xmax,xmin)
+    yMidPoint = midPoint(ymax,ymin)
+    xleftQuarter = midPoint(xmin, xmidPoint)
+    xRightQuarter = midPoint(xmidPoint, xmax)
+    yLowerQuarter = midPoint(ymin, yMidPoint)
+    yUpperQuarter = midPoint(yMidPoint, ymax)
+
+    radius_counter = 1
+    increase_radius = True
+    intensity = 1
+
+    while(increase_radius):
+        if((x-xmidPoint)**2 + (y - yMidPoint)**2 <= radius_counter**2):
+            increase_radius = False
+        else:
+            radius_counter += 1
+            intensity-=0.005
+            
+    lightBrown = color(round(210* intensity), round(105* intensity), round(30 *intensity))
+    sandybrown = color(round(244* intensity), round(164* intensity), round(96 *intensity))
+    darkBrown = color(round(139* intensity), round(69* intensity), round(19 *intensity))
+    navajowhite = color(round(255* intensity), round(222* intensity), round(173 *intensity))
+
+    
+    offset = random.randint(0,5)
+    if((x-xmidPoint)**2 + (y - yLowerQuarter)**2 <=500+offset ):
+        return lightBrown
+    elif((x-xmidPoint)**2 + (y - yLowerQuarter)**2 <=800 +offset or y> yUpperQuarter + 30 + offset or y < yLowerQuarter -30 +offset):
+        return sandybrown
+    elif(y in range(yMidPoint-70 +offset, yMidPoint-30 - offset) or y in range(yMidPoint+30 + offset, yMidPoint+60 - offset)):
+        return darkBrown
+    else:
+        return navajowhite
 
 def bbox(*vertices):
     xs = [ vertex.x for vertex in vertices ]

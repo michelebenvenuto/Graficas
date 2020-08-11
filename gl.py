@@ -161,7 +161,7 @@ class Render(object):
                     grey = round(255 * intensity)
                     if grey < 0:
                         continue
-                    self.triangle(a, b, c, color = color(grey, grey, grey))
+                    self.triangle(a, b, c, color(grey,grey,grey), intensity=intensity)
                 else:
                     t1 = face[0][1] - 1
                     t2 = face[1][1] - 1
@@ -196,8 +196,8 @@ class Render(object):
                     if grey < 0:
                         continue
             
-                    self.triangle(A, B, C, color(grey, grey, grey))
-                    self.triangle(A, C, D, color(grey, grey, grey))
+                    self.triangle(A, B, C,  color(grey,grey,grey),intensity=intensity)
+                    self.triangle(A, C, D,  color(grey,grey,grey),intensity=intensity)
                 else:
                     t1 = face[0][1] - 1
                     t2 = face[1][1] - 1
@@ -260,8 +260,15 @@ class Render(object):
                     continue
 
                 if z > self.zbuffer[x][y] and x < len(self.zbuffer) and y < len(self.zbuffer[x]) :
-                    self.point(V2(x, y), color)
+                    self.point(V2(x, y), JupiterShader(x, y, intensity))
                     self.zbuffer[x][y] = z
+
+    def draw_arrays(self, polygon_type):
+        if(polygon_type == 'TRIANGLE'):
+            pass
+        elif polygon_type =='WIREFRAME':
+            pass
+
 #This class will be helpfull if more viewports are required in the future
 class Viewport(object):
     def __init__(self, x, y, height, width):
