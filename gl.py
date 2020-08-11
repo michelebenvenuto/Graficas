@@ -260,7 +260,7 @@ class Render(object):
                     continue
 
                 if z > self.zbuffer[x][y] and x < len(self.zbuffer) and y < len(self.zbuffer[x]) :
-                    self.point(V2(x, y), JupiterShader(x, y, intensity))
+                    self.point(V2(x, y), color)
                     self.zbuffer[x][y] = z
 
     def draw_arrays(self, polygon_type):
@@ -268,7 +268,7 @@ class Render(object):
             pass
         elif polygon_type =='WIREFRAME':
             pass
-
+    
 #This class will be helpfull if more viewports are required in the future
 class Viewport(object):
     def __init__(self, x, y, height, width):
