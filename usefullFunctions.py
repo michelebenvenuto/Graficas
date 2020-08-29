@@ -15,7 +15,7 @@ def word(myChar):
 def dword(myChar):
 	return struct.pack('=l', myChar)
 
-def color(r,g,b):
+def getcolor(r,g,b):
 	return bytes([b,g,r])
 
 def midPoint(start, end):
@@ -45,10 +45,10 @@ def JupiterShader(x, y,filler):
             radius_counter += 1
             intensity-=0.005
             
-    lightBrown = color(round(210* intensity), round(105* intensity), round(30 *intensity))
-    sandybrown = color(round(244* intensity), round(164* intensity), round(96 *intensity))
-    darkBrown = color(round(139* intensity), round(69* intensity), round(19 *intensity))
-    navajowhite = color(round(255* intensity), round(222* intensity), round(173 *intensity))
+    lightBrown = getcolor(round(210* intensity), round(105* intensity), round(30 *intensity))
+    sandybrown = getcolor(round(244* intensity), round(164* intensity), round(96 *intensity))
+    darkBrown = getcolor(round(139* intensity), round(69* intensity), round(19 *intensity))
+    navajowhite = getcolor(round(255* intensity), round(222* intensity), round(173 *intensity))
 
     
     offset = random.randint(0,5)
@@ -68,10 +68,10 @@ def bbox(*vertices):
     xs.sort()
     ys.sort()
 
-    xmin = xs[0]
-    xmax = xs[-1]
-    ymin = ys[0]
-    ymax = ys[-1]
+    xmin = round(xs[0])
+    xmax = round(xs[-1])
+    ymin = round(ys[0])
+    ymax = round(ys[-1])
 
     return xmin, xmax, ymin, ymax
 
@@ -145,3 +145,53 @@ def barycentric(A, B, C, P):
     w = 1 - (cx + cy) / cz
 
     return w, v, u
+
+class Matrix(object):
+    def __init__(self, arrayOfArrays):
+        self.createMatrix(arrayOfArrays)
+
+    def createMatrix(self, arrayOfArrays):
+        self.rows = len(arrayOfArrays)
+
+        columnChecker = len(arrayOfArrays[0])
+
+        for row in arrayOfArrays:
+            if len(row) != columnChecker:
+                raise Exception("Rows of a matrix have and inconsisten numer of colums")
+            else:
+                continue
+        
+        self.columns = columnChecker
+        self.matrix = arrayOfArrays
+
+    def __str__(self):
+        result = '(\n'
+        for row in self.matrix:
+            result = result + '['
+            for column in row:
+                result =result + str(column) + ' '
+            result = result + ']'
+            result = result + '\n'
+        result = result + ')'
+        return result
+
+def matrixMultiplication(a,b):
+    if(a.columns != b.rows):
+        raise Exception('Size of the given matrixes are not compatible')
+    else:
+        resultArray = []
+        #Get the size of the result matrix 
+        for row in range(a.rows):
+            rowToAppend = []
+            for column in range(b.columns):
+                rowToAppend.append(0)
+            resultArray.append(rowToAppend)
+        #Populate the matrix with the correct numbers
+        for i in range(a.rows):
+            for j in range(b.columns):
+                for k in range(b.rows):
+                    resultArray[i][j] += a.matrix[i][k] * b.matrix[k][j]
+
+        return Matrix(resultArray)
+
+
