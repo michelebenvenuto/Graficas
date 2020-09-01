@@ -1,6 +1,7 @@
 from usefullFunctions import *
 from obj import Obj, Texture
 from math import sin, cos
+from shaders import gouradShader
 
 White = getcolor(255,255,255)
 Black = getcolor(0,0,0)
@@ -18,6 +19,7 @@ class Render(object):
         self.active_vertex_array = []
         self.glCreateWindow(self.width,self.height)
         self.light = V3(0,0,1)
+        self.active_shader = gouradShader
         
 
     def glInit(self):
@@ -41,6 +43,25 @@ class Render(object):
             [self.clearColor for x in range(self.width)]
             for y in range(self.height) 
         ]
+    
+    def paintBackground(self):
+        image = open(self.active_texture.path, "rb")
+
+        image.seek(2 + 4 + 4)
+        header_size = struct.unpack("=l", image.read(4))[0]
+        image.seek(2 + 4 + 4 + 4 + 4)
+
+        width = struct.unpack("=l", image.read(4))[0]  
+        height = struct.unpack("=l", image.read(4))[0] 
+        image.seek(header_size)
+
+        for y in range(height):
+            for x in range(width):
+                b = ord(image.read(1))
+                g = ord(image.read(1))
+                r = ord(image.read(1))
+                self.framebuffer[y][x] = getcolor(r,g,b)
+        image.close()
 
     def glClearColor(self, r,g,b):
         self.clearColor = getcolor(r,g,b)
@@ -176,6 +197,9 @@ class Render(object):
                     else:
                         tvertex = V3(*model.tvertexes[x[1]-1],0)
                         vertex_buffer_object.append(tvertex)
+                for x in face:
+                    nvertex = V3(*model.nvertexes[x[2]-1])
+                    vertex_buffer_object.append(nvertex)
         
         self.active_vertex_array = iter(vertex_buffer_object)
             
@@ -215,6 +239,10 @@ class Render(object):
             tA = next(self.active_vertex_array)
             tB =  next(self.active_vertex_array)
             tC = next(self.active_vertex_array)
+        
+        nA = next(self.active_vertex_array)
+        nB = next(self.active_vertex_array)
+        nC = next(self.active_vertex_array)
 
         xmin, xmax, ymin, ymax = bbox(A, B, C)
 
@@ -222,9 +250,7 @@ class Render(object):
         intensity = dot(normal, self.light)
         if intensity < 0:
             return
-       
-        color = getcolor(round(255*intensity),round(255*intensity),round(255*intensity))
-        
+
         for x in range(xmin, xmax +1):
             for y in range(ymin, ymax+1):
                 P = V2(x, y)
@@ -236,7 +262,13 @@ class Render(object):
                     tx = tA.x * w + tB.x * v + tC.x * u
                     ty = tA.y * w + tB.y * v + tC.y * u
 
-                    color = self.active_texture.get_color(tx, ty, intensity)
+                color = self.active_shader(
+                    self,
+                    triangle = (A, B, C),
+                    bar = (w, v, u),
+                    texture_coords = (tx, ty),
+                    varying_normals = (nA, nB, nC)
+                )
 
                 z = A.z * w + B.z * v + C.z * u
 
